@@ -147,7 +147,10 @@ app.delete(
         return res.json({ success: false, message: "Invalid Creds." });
       }
 
-      const content = await Content.deleteOne({ userId: userId, _id: contentId });
+      const content = await Content.deleteOne({
+        userId: userId,
+        _id: contentId,
+      });
       console.log("content", content);
       res.json({ success: true, message: `deleted successfully` });
     } catch (err) {
@@ -162,26 +165,40 @@ app.delete(
 //  shareable link for your second brain
 app.post("/api/v1/brain/share", isLoggedIn, async (req, res) => {
   try {
-    const {share} = req.body;
+    const { share } = req.body;
     const userId = req.userId;
-    if(typeof userId === "undefined"){
-      return res.json({success: false, message: "Invalid user id"});
-    }
-    
-    if(share) {
-      await Link.create({
-        userId: userId,
-        hash: generateLink()  // blog.com/share/lasjd#skl%lsdfj
-      })
-    }
-    else {
-      await Link.deleteOne({
-        userId: userId
-      })
+    if (typeof userId === "undefined") {
+      return res.json({ success: false, message: "Invalid user id" });
     }
 
-    res.json({success: true, message: "Updated shared link."});
-    
+    if (share) {
+      const existingLink = await Link.findOne({ userId });
+
+      if (existingLink) {
+        return res.json({
+          success: true,
+          link: existingLink.hash,
+          message: "Link already exists.",
+        });
+      }
+
+      const link = await Link.create({
+        userId: userId,
+        hash: generateLink(), // blog.com/share/lasjd#skl%lsdfj
+      });
+
+      res.json({
+        success: true,
+        link: link.hash,
+        message: "Updated shared link.",
+      });
+    } else {
+      await Link.deleteOne({
+        userId: userId,
+      });
+
+      res.json({ success: true, message: "Link removed." });
+    }
   } catch (err) {
     res.json({ success: false, message: err });
     console.log(err);
@@ -191,6 +208,21 @@ app.post("/api/v1/brain/share", isLoggedIn, async (req, res) => {
 // Fetch another user's shared brain content
 app.get("/api/v1/brain/:shareLink", async (req, res) => {
   try {
+    const hash = req.params.shareLink;
+    const link = await Link.findOne({ hash });
+    if (!link) {
+      return res.json({ success: false, message: "Link was expired." });
+    }
+
+    const content = await Content.find({
+      userId: link.userId,
+    });
+
+    const user = await User.findOne({
+      _id: link.userId,
+    });
+
+    res.json({ success: true, content: { username: user?.username, content } });
   } catch (err) {
     res.json({ success: false, message: err });
     console.log(err);
