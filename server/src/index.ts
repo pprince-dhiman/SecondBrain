@@ -8,6 +8,8 @@ import User from "./models/user.js";
 import Content from "./models/content.js";
 import cookieParser from "cookie-parser";
 import { isLoggedIn } from "./middlewares/auth.js";
+import Link from "./models/link.js";
+import { generateLink } from "./utils.js";
 
 interface Content {
   title: string;
@@ -158,8 +160,28 @@ app.delete(
 );
 
 //  shareable link for your second brain
-app.post("/api/v1/brain/share", async (req, res) => {
+app.post("/api/v1/brain/share", isLoggedIn, async (req, res) => {
   try {
+    const {share} = req.body;
+    const userId = req.userId;
+    if(typeof userId === "undefined"){
+      return res.json({success: false, message: "Invalid user id"});
+    }
+    
+    if(share) {
+      await Link.create({
+        userId: userId,
+        hash: generateLink()  // blog.com/share/lasjd#skl%lsdfj
+      })
+    }
+    else {
+      await Link.deleteOne({
+        userId: userId
+      })
+    }
+
+    res.json({success: true, message: "Updated shared link."});
+    
   } catch (err) {
     res.json({ success: false, message: err });
     console.log(err);
