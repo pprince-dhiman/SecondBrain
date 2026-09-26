@@ -1,6 +1,4 @@
-import { iconSizeVarients, type IconProps } from ".";
-
-export const PlusIcon = ({size} : IconProps) => {
+const PlusIcon = () => {
   return (
     <div>
       <svg
@@ -9,7 +7,7 @@ export const PlusIcon = ({size} : IconProps) => {
         viewBox="0 0 24 24"
         stroke-width="1.5"
         stroke="currentColor"
-        className={`${iconSizeVarients[size]}`}
+        className="size-4"
       >
         <path
           stroke-linecap="round"
@@ -20,3 +18,5 @@ export const PlusIcon = ({size} : IconProps) => {
     </div>
   );
 };
+
+export default PlusIcon;
